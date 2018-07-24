@@ -50,7 +50,7 @@ typedef enum ExifExposureModeType
 }ExifExposureModeType;
 
 typedef struct EXIFInfo
-{
+{
     unsigned char  CameraMake[INFO_LENGTH];
     unsigned char  CameraModel[INFO_LENGTH];
     unsigned char  DateTime[DATA_TIME_LENGTH];
