@@ -51,6 +51,24 @@ int mem_erase(unsigned index){
 		return -1;
 	}
 }
+void meme_info(void){
+	unsigned i;
+	printf("--------------------------------------------\n");
+	printf("mem size %u\n", allocations.mem_cnt);
+	for(i=0;i<allocations.mem_cnt;i++){
+		printf("\
+mem[%u] info: \n\
+handle   : %u\n\
+fd       : %u\n\
+virt_addr: %u\n\
+", (unsigned)i, \
+(unsigned)allocations.mem[i].handle, \
+(unsigned)allocations.mem[i].fd, \
+(unsigned)allocations.mem[i].virt_addr \
+);
+	}
+	printf("--------------------------------------------\n");
+}
 inline int mem_is_full(void){
 	return (allocations.mem_cnt >= allocations.mem_max);
 }
@@ -94,6 +112,7 @@ int sunxi_alloc_open(void){
 	return 0;
 }
 int sunxi_alloc_close(void){
+	printf("start close /dev/ion.\n");
 	int ret, index;
 	struct ion_handle_data handle_data;
 	while(!mem_is_empty()){
@@ -112,6 +131,7 @@ int sunxi_alloc_close(void){
 	}
 	close(allocations.fd);
 	allocations.fd = 0;
+	free(allocations.mem);
 	printf("close /dev/ion success.\n");
 	return 0;
 }
@@ -120,14 +140,12 @@ int sunxi_alloc_alloc(int size){
 	struct ion_allocation_data allocation_data = {
 		.len = (size_t)size,
 		.align = 4096,
-		.heap_id_mask = ION_HEAP_TYPE_CUSTOM,
+		.heap_id_mask = ION_HEAP_CARVEOUT_MASK,
 		.flags = ION_FLAG_CACHED | ION_FLAG_CACHED_NEEDS_SYNC
 	};
 	struct ion_handle_data handle_data;
 	sunxi_phys_data phys_data;
-	struct ion_custom_data custom_data = {
-		.cmd = ION_IOC_SUNXI_PHYS_ADDR
-	};
+	struct ion_custom_data custom_data;
 	struct ion_fd_data fd_data;
 	/*===========================================*/
 	if(mem_is_full()){
@@ -143,6 +161,7 @@ int sunxi_alloc_alloc(int size){
 	handle_data.handle = allocation_data.handle;
 	/*===========================================*/
 	phys_data.handle = allocation_data.handle;
+	custom_data.cmd = ION_IOC_SUNXI_PHYS_ADDR;
 	custom_data.arg = (unsigned long)&phys_data;
 	ret = ioctl(allocations.fd, ION_IOC_CUSTOM, &custom_data);
 	if(ret){
@@ -172,9 +191,12 @@ int sunxi_alloc_alloc(int size){
 	mem_next()->phys_addr = (void*)phys_data.phys_addr;
 	mem_next()->len = size;
 	mem_inc();
+	printf("alloc buffer addr %u, size %u.\n", (unsigned)addr, (unsigned)size);
 	return (int)addr;
 }
 int sunxi_alloc_free(void * pbuf){
+	printf("free buffer addr %u.\n", (unsigned)pbuf);
+	meme_info();
 	int ret, index;
 	struct ion_handle_data handle_data;
 	index = mem_find_virt(pbuf);
@@ -194,6 +216,7 @@ int sunxi_alloc_free(void * pbuf){
 		return -1;
 	}
 	mem_erase(index);
+	meme_info();
 	return 0;
 }
 int sunxi_alloc_vir2phy(void * pbuf){
