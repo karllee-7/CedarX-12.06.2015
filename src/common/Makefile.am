@@ -5,12 +5,15 @@ pkglib_LTLIBRARIES = libcedar_common.la
   
 libcedar_common_la_SOURCES = memoryAdapter.c \
 						   ve.c \
-						   ve_alloc.c   
+						   ve_alloc.c  \
+						  ion_sunxi_alloc.c
  
 libcedar_common_la_CFLAGS = $(CEDAR_CFLAGS)
+libcedar_common_la_CXXFLAGS = $(CEDAR_CFLAGS)
 LOCAL_INCLUDE = -I./include \
                 -I$(top_srcdir)/base/include
 libcedar_common_la_CFLAGS += $(LOCAL_INCLUDE)
+libcedar_common_la_CXXFLAGS += $(LOCAL_INCLUDE)
 
 libcedar_common_la_LIBADD = $(top_srcdir)/base/libcedar_base.la 
 
